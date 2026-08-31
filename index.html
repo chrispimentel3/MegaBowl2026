@@ -42,13 +42,13 @@ button{font-family:var(--sans);cursor:pointer}
 .grid{display:grid;grid-template-columns:1fr 344px;gap:12px;align-items:start}
 @media(max-width:900px){.grid{grid-template-columns:1fr}}
 .board{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.bhead,.row{display:grid;grid-template-columns:28px minmax(0,1fr) 38px 44px 48px 48px 26px 84px;gap:9px;align-items:center}
+.bhead,.row{display:grid;grid-template-columns:28px minmax(0,1fr) 38px 44px 48px 48px 26px 112px;gap:9px;align-items:center}
 .bhead{padding:9px 12px;border-bottom:1px solid var(--line2);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .bhead b{cursor:pointer}.bhead b.on{color:var(--chalk)}.bhead .r{text-align:right}.bhead .c{text-align:center}
 .rows{max-height:calc(100vh - 232px);overflow:auto}
 .row{padding:8px 12px;border-bottom:1px solid var(--line);position:relative}
 .row:hover{background:var(--panel2)}.row.gone{opacity:.42}
-.row.mine{background:rgba(31,157,87,.09)}.row.mine::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--mine)}
+.row.xout{opacity:.34}.row.xout .nm{text-decoration:line-through;text-decoration-thickness:1px}.row.xout:hover{opacity:.75}.act.xo{padding:5px 6px;color:var(--faint);font-weight:400;font-size:13px}.act.xo[data-on="1"]{border-color:var(--target);color:var(--target);font-weight:700}.row.mine{background:rgba(31,157,87,.09)}.row.mine::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--mine)}
 .row.tgt::after{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--target)}.row.mine.tgt::after{display:none}
 .rk{font-family:var(--mono);color:var(--muted);font-size:12px}
 .who{min-width:0}.nm{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -257,11 +257,12 @@ button:focus-visible{outline:none;box-shadow:var(--ring)}
   .app[data-mview="roster"] .rostercard{display:flex;flex-direction:column;margin-bottom:10px}
   .app[data-mview="roster"] .trackcard{display:block}
   /* board row: drop bye + pts columns, fold bye under the name, enlarge tap targets */
-  .bhead,.row{grid-template-columns:22px minmax(0,1fr) 42px 42px 24px 96px;gap:7px}
+  .bhead,.row{grid-template-columns:22px minmax(0,1fr) 42px 42px 24px 124px;gap:7px}
   .col-bye,.col-pts,.row .bye,.num.pts{display:none}
   .bye-inline{display:inline}
   .row{padding:11px 10px}
   .act{padding:9px 10px;font-size:12.5px}
+  .act.xo{padding:9px 8px}
   .star{font-size:19px}
   .acts{gap:6px}
   /* controls: search full-width, position chips swipe horizontally */
@@ -305,6 +306,7 @@ button:focus-visible{outline:none;box-shadow:var(--ring)}
     <label class="tgl"><input type="checkbox" id="hideDrafted">Hide drafted</label>
     <label class="tgl"><input type="checkbox" id="onlyTargets">Targets</label>
     <label class="tgl"><input type="checkbox" id="onlyValue">Value</label>
+    <label class="tgl"><input type="checkbox" id="hideOut">Hide &#10005;</label>
     <button class="tool" id="undo">&#8630; Undo</button>
     <button class="tool" id="loadcsv">Load CSV</button><input type="file" id="csvfile" accept=".csv" style="display:none">
     <button class="tool" id="export">Export</button><button class="tool warn" id="reset">Reset</button>
@@ -374,7 +376,7 @@ const BAKED_POOL=JSON.parse(JSON.stringify(PLAYERS));
 const TEAMS=12,ROUNDS=15;
 const TARGET_ROSTER=[["QB",1],["RB",2],["WR",2],["FLEX",1],["TE",1],["K",1],["DST",1]];
 const FLEX_POS=["RB","WR"],SOFT={QB:1,RB:3,WR:3,TE:1},KEY="draftwarroom2026v8";
-let S={slot:0,st:{},drafter:{},tgt:{},hist:[],mgr:{},filter:"ALL",sort:"rank",search:"",hideDrafted:false,onlyTargets:false,onlyValue:false,order:[],scenario:"mean"};
+let S={slot:0,st:{},drafter:{},tgt:{},hist:[],mgr:{},filter:"ALL",sort:"rank",search:"",hideDrafted:false,onlyTargets:false,onlyValue:false,hideOut:false,out:{},order:[],scenario:"mean"};
 function load(){try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r));
   const pool=localStorage.getItem(KEY+"_pool");if(pool)PLAYERS=JSON.parse(pool);}catch(e){}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
@@ -407,6 +409,9 @@ function undo(){const p=S.hist.pop();if(!p){toast("Nothing to undo");return;}
   if(p.drafter)S.drafter[p.rank]=p.drafter;else delete S.drafter[p.rank];
   S.order=S.order.filter(x=>x!==p.rank);if(p.inOrder)S.order.push(p.rank);save();render();toast("Undone");}
 function isTarget(p){return p.tflag==="target"||S.tgt[p.rank];}
+function isOut(p){return !!S.out[p.rank];}
+function toggleOut(rank){if(S.out[rank])delete S.out[rank];else S.out[rank]=1;save();render();}
+function outCount(){return Object.keys(S.out||{}).length;}
 function render(){reindex();renderClock();renderNudge();renderBoard();renderGaps();renderBest();renderRoster();renderScarcity();renderSnake();
   $("#scenlab").textContent=S.scenario==="low"?"floor":S.scenario==="high"?"ceiling":"mean";save();}
 function renderClock(){const cur=curPick();$("#ovPick").textContent=cur;$("#ovRound").textContent="R"+Math.min(ROUNDS,Math.ceil(cur/TEAMS));
@@ -423,6 +428,7 @@ function renderNudge(){const rnd=Math.min(ROUNDS,Math.ceil(curPick()/TEAMS));
 function passFilter(p){if(S.filter==="FLEX"){if(!FLEX_POS.includes(p.pos))return false;}else if(S.filter!=="ALL"&&p.pos!==S.filter)return false;
   if(S.onlyTargets&&!isTarget(p))return false;if(S.onlyValue&&!isValue(p))return false;
   const st=S.st[p.rank];if(S.hideDrafted&&(st==="mine"||st==="gone"))return false;
+  if(S.hideOut&&S.out[p.rank]&&st!=="mine")return false;
   if(S.search){const q=S.search.toLowerCase();if(!(p.name.toLowerCase().includes(q)||(p.team||"").toLowerCase().includes(q)||(p.pos||"").toLowerCase().includes(q)))return false;}
   return true;}
 function sortList(l,flexon){if(flexon&&(S.sort==="rank"||S.sort==="vor"))return l.slice().sort((a,b)=>((b._fv==null?-9999:b._fv))-((a._fv==null?-9999:a._fv)));if(S.sort==="pts")return l.slice().sort((a,b)=>(P(b)||0)-(P(a)||0));
@@ -444,7 +450,7 @@ function renderBoard(){document.querySelectorAll(".bhead b").forEach(b=>b.classL
   let list=sortList(PLAYERS.filter(passFilter),FLEXON);
   if(!list.length){rowsEl().innerHTML='<div class="empty">No players match. Clear a filter or the search.</div>';return;}
   const h=[];for(const p of list){const st=S.st[p.rank]||"avail";
-    const cls=["row"];if(st==="gone")cls.push("gone");if(st==="mine")cls.push("mine");if(isTarget(p)&&st==="avail")cls.push("tgt");
+    const cls=["row"];if(st==="gone")cls.push("gone");if(st==="mine")cls.push("mine");if(isTarget(p)&&st==="avail")cls.push("tgt");if(S.out[p.rank])cls.push("xout");
     const drafter=st==="gone"?('<span class="tm">T'+(S.drafter[p.rank]||"?")+'</span>'):"";const v=V(p);const vshow=(S.filter==="FLEX"&&p._fv!=null)?p._fv:v;
     h.push('<div class="'+cls.join(" ")+'" data-rk="'+p.rank+'"><div class="rk">'+p.rank+'</div>'+
       '<div class="who"><div class="nm">'+p.name+' '+drafter+'</div><div class="meta">'+
@@ -454,10 +460,10 @@ function renderBoard(){document.querySelectorAll(".bhead b").forEach(b=>b.classL
       '<div class="num pts">'+(P(p)?fmt(P(p)):"–")+'</div>'+
       '<div class="num vor'+(vshow!=null&&vshow<0?" neg":"")+'"'+((S.filter==="FLEX"&&p._fv!=null)?' title="Flex VOR: projected pts above the live flex replacement (72nd flex-eligible still available)"':"")+'>'+(vshow==null?"–":(vshow>0?"+":"")+fmt(vshow))+'</div>'+
       '<button class="star" data-a="star" data-on="'+(S.tgt[p.rank]?1:0)+'" title="Star">&#9733;</button>'+
-      '<div class="acts"><button class="act mine" data-a="mine">Mine</button><button class="act gone" data-a="gone">Gone</button></div></div>');}
+      '<div class="acts"><button class="act xo" data-a="xout" data-on="'+(S.out[p.rank]?1:0)+'" title="Cross off — do not draft">&#10005;</button><button class="act mine" data-a="mine">Mine</button><button class="act gone" data-a="gone">Gone</button></div></div>');}
   rowsEl().innerHTML=h.join("");}
 function renderGaps(){
-  const rel=p=>isAvail(p)&&p.edge!=null&&p.pos!=="K"&&p.pos!=="DST"&&((p.rank<=165)||(p.crank!=null&&p.crank<=165));
+  const rel=p=>isAvail(p)&&!isOut(p)&&p.edge!=null&&p.pos!=="K"&&p.pos!=="DST"&&((p.rank<=165)||(p.crank!=null&&p.crank<=165));
   const pool=PLAYERS.filter(rel);
   const vals=pool.filter(p=>p.edge>=8).sort((a,b)=>b.edge-a.edge).slice(0,7);
   const fades=pool.filter(p=>p.edge<=-8).sort((a,b)=>a.edge-b.edge).slice(0,7);
@@ -476,7 +482,7 @@ function renderGaps(){
 function myPlayers(){return S.order.map(r=>byRank[r]).filter(p=>p&&S.st[p.rank]==="mine");}
 function posCounts(){const c={};myPlayers().forEach(p=>c[p.pos]=(c[p.pos]||0)+1);return c;}
 function renderBest(){const cnt=posCounts();
-  const avail=PLAYERS.filter(p=>isAvail(p)&&V(p)!=null);
+  const avail=PLAYERS.filter(p=>isAvail(p)&&!isOut(p)&&V(p)!=null);
   const scored=avail.map(p=>{let s=V(p);const need=Math.max(0,(SOFT[p.pos]||0)-(cnt[p.pos]||0));
     if(need>0)s+=22;if(p.tflag==="target")s+=18;else if(p.tflag==="profile")s+=6;
     const f=fallBy(p);if(f!=null&&f>0)s+=Math.min(15,f/2);return{p,s,need,val:isValue(p)};}).sort((a,b)=>b.s-a.s).slice(0,6);
@@ -566,7 +572,7 @@ function loadPool(txt){try{const np=parseCSV(txt);if(!np.length||!np[0].name){to
 // events
 document.addEventListener("click",e=>{const btn=e.target.closest("[data-a]");if(btn&&e.target.closest("#rows")){
   const rk=+e.target.closest(".row").dataset.rk,a=btn.dataset.a;
-  if(a==="star")toggleTarget(rk);else if(a==="mine")setStatus(rk,S.st[rk]==="mine"?"avail":"mine");else if(a==="gone")setStatus(rk,S.st[rk]==="gone"?"avail":"gone");}});
+  if(a==="star")toggleTarget(rk);else if(a==="xout")toggleOut(rk);else if(a==="mine")setStatus(rk,S.st[rk]==="mine"?"avail":"mine");else if(a==="gone")setStatus(rk,S.st[rk]==="gone"?"avail":"gone");}});
 $("#best").addEventListener("click",e=>{const r=e.target.closest(".bestrow");if(r)setStatus(+r.dataset.rk,"mine");});
 $("#gapwrap").addEventListener("click",e=>{const r=e.target.closest(".gaprow.pick");if(r)setStatus(+r.dataset.rk,"mine");});
 $("#search").addEventListener("input",e=>{S.search=e.target.value;renderBoard();});
@@ -577,11 +583,12 @@ $("#scen").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
 $("#hideDrafted").addEventListener("change",e=>{S.hideDrafted=e.target.checked;save();renderBoard();});
 $("#onlyTargets").addEventListener("change",e=>{S.onlyTargets=e.target.checked;save();renderBoard();});
 $("#onlyValue").addEventListener("change",e=>{S.onlyValue=e.target.checked;save();renderBoard();});
+$("#hideOut").addEventListener("change",e=>{S.hideOut=e.target.checked;save();renderBoard();});
 document.querySelectorAll(".bhead b").forEach(b=>b.addEventListener("click",()=>{S.sort=(S.sort===b.dataset.sort)?"rank":b.dataset.sort;save();renderBoard();}));
 $("#undo").addEventListener("click",undo);$("#export").addEventListener("click",exportCSV);
 $("#loadcsv").addEventListener("click",()=>$("#csvfile").click());
 $("#csvfile").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>loadPool(r.result);r.readAsText(f);e.target.value="";});
-$("#reset").addEventListener("click",()=>{if(confirm("Reset the draft? Slot and manager notes are kept."))
+$("#reset").addEventListener("click",()=>{if(confirm("Reset the draft? Slot, crossed-off players and manager notes are kept."))
   {S.st={};S.drafter={};S.tgt={};S.hist=[];S.order=[];save();render();toast("Board reset");}});
 const slotSel=$("#slotSel");for(let i=1;i<=TEAMS;i++){const o=document.createElement("option");o.value=i;o.textContent="Slot "+i;slotSel.appendChild(o);}
 slotSel.addEventListener("change",e=>{S.slot=+e.target.value;save();render();});
@@ -667,7 +674,7 @@ $("#ereset").addEventListener("click",resetEditorToBlend);
   $("#mswitch").addEventListener("click",e=>{const b=e.target.closest("button[data-mv]");if(!b)return;app.dataset.mview=b.dataset.mv;
     document.querySelectorAll("#mswitch button").forEach(x=>x.dataset.on=(x.dataset.mv===b.dataset.mv)?"1":"0");});})();
 
-load();reindex();$("#hideDrafted").checked=S.hideDrafted;$("#onlyTargets").checked=S.onlyTargets;$("#onlyValue").checked=S.onlyValue;slotSel.value=S.slot;
+load();reindex();$("#hideDrafted").checked=S.hideDrafted;$("#onlyTargets").checked=S.onlyTargets;$("#onlyValue").checked=S.onlyValue;$("#hideOut").checked=S.hideOut;slotSel.value=S.slot;
 document.querySelectorAll(".chip").forEach(x=>x.dataset.on=(x.dataset.pos===S.filter)?"1":"0");
 document.querySelectorAll("#scen button").forEach(x=>x.dataset.on=(x.dataset.s===S.scenario)?"1":"0");
 $("#search").value=S.search||"";renderMgr();render();
