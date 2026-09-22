@@ -2,284 +2,372 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mega Bowl 2026 · Targets</title>
 <!--
-  Targets tab. Built from data/targets_2026.json, which holds raw weekly counts only —
-  every ratio on this page is computed here, so changing the rolling window costs nothing
-  and never needs the data rebuilt.
+  Targets tab — the in-season sheet. Deliberately NOT the Draft War Room's green chalkboard:
+  that page is preseason, this one is Tuesday morning. It shares its type and navy with the
+  Command Center dashboard, which is the other in-season surface.
 
-  Other tabs (Power Rankings, Trends, Enter Scores, Data) go in beside this one: add a
-  <button class="tab" data-tab="name"> to .tabs and a <section id="tab-name"> below.
-  This page keeps its own localStorage key, megabowltargets2026v1.
+  Signature: the first-down line. The page's headline number is first downs per route, and
+  12% is a line to cross, so it is drawn the way television draws one — a yellow line across
+  the bar. Crossing it is the only thing on the page that gets colour.
+
+  Data: data/targets_2026.json, raw weekly counts only. Every ratio is computed here, so the
+  window (1/3/5/season) changes without rebuilding the data. Storage key megabowltargets2026v1.
+  Other tabs slot in beside this one: a <button class="tab"> plus a <section>.
 -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Archivo+Narrow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#eef1ee;--panel:#fff;--panel2:#f2f5f2;
---line:rgba(22,40,30,.12);--line2:rgba(22,40,30,.22);
---ink:#17241d;--muted:#5d6f64;--faint:#84968b;--chalk:#0e3b26;
---wr:#2472c8;--te:#9b45c4;--good:#1f9d57;--target:#c8901a;--warn:#d64b3a;
---sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;}
-*{box-sizing:border-box}html,body{margin:0}
-body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.35;-webkit-text-size-adjust:100%}
-.wrap{max-width:1340px;margin:0 auto;padding:10px 12px 48px}
-button{font-family:var(--sans);cursor:pointer}
-a{color:var(--chalk)}
-.masthead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:8px}
-.masthead h1{margin:0;font-size:20px;font-weight:800;letter-spacing:-.01em;color:var(--chalk)}
-.masthead .sub{font-family:var(--mono);font-size:11px;color:var(--muted)}
-.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line2);margin-bottom:10px;overflow-x:auto}
-.tabs a,.tabs button{background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);
-  font-size:13px;font-weight:700;padding:7px 12px;white-space:nowrap;text-decoration:none}
-.tabs .on{color:var(--chalk);border-bottom-color:var(--target)}
-.lede{font-size:13px;color:var(--muted);margin:0 0 10px;max-width:74ch}
-.lede b{color:var(--ink)}
-.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--panel);
-  border:1px solid var(--line);border-radius:12px;padding:8px;margin-bottom:10px}
-.search{flex:1 1 170px;min-width:140px;background:var(--panel2);border:1px solid var(--line);
-  color:var(--ink);border-radius:8px;padding:8px 10px;font-size:14px}
-.grp{display:flex;gap:2px;border:1px solid var(--line);border-radius:8px;padding:2px;background:var(--panel2)}
-.grp button{background:transparent;border:none;color:var(--muted);border-radius:6px;padding:6px 9px;
-  font-size:11px;font-weight:800;letter-spacing:.03em}
-.grp button[data-on="1"]{color:#fff;background:var(--chalk)}
-.grp.pos button.WR[data-on="1"]{background:var(--wr)}
-.grp.pos button.TE[data-on="1"]{background:var(--te)}
-.tgl{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;user-select:none}
-.tgl input{accent-color:var(--good)}
-.lbl{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding-left:4px}
-.board{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:auto}
-table{border-collapse:collapse;width:100%;font-size:13px}
-th,td{padding:7px 9px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
-th{position:sticky;top:0;background:var(--panel);z-index:2;font-size:10px;letter-spacing:.08em;
-  text-transform:uppercase;color:var(--muted);cursor:pointer;border-bottom:1px solid var(--line2)}
-th:hover{color:var(--chalk)}
-th.on{color:var(--chalk)}
-th.who,td.who{text-align:left;position:sticky;left:0;background:var(--panel);z-index:1}
-th.who{z-index:3}
-tr:hover td{background:var(--panel2)}
-tr:hover td.who{background:var(--panel2)}
-tr.thin{opacity:.45}
-tr.mine td.who{box-shadow:inset 3px 0 0 var(--good)}
-.nm{font-weight:700}
-.pill{font-family:var(--mono);font-size:10px;font-weight:800;padding:1px 5px;border-radius:4px;color:#fff;margin-right:5px}
-.pill.WR{background:var(--wr)}.pill.TE{background:var(--te)}
-.tm{font-family:var(--mono);font-size:11px;color:var(--muted)}
-td.n{font-family:var(--mono)}
-td.roll{font-family:var(--mono);font-weight:800;border-left:1px solid var(--line2)}
-th.roll{border-left:1px solid var(--line2)}
-.flag{font-family:var(--mono);font-size:9px;font-weight:800;padding:1px 5px;border-radius:3px;color:#fff;background:var(--target)}
-.thinnote{font-family:var(--mono);font-size:9px;color:var(--faint)}
-.est{border-bottom:1px dotted var(--faint);cursor:help}
-.empty{padding:34px;text-align:center;color:var(--muted)}
-.notes{margin-top:12px;font-size:12.5px;color:var(--muted);max-width:86ch}
-.notes h3{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin:14px 0 5px}
-.notes dt{font-weight:700;color:var(--ink);float:left;clear:left;min-width:150px}
-.notes dd{margin:0 0 5px 150px}
-@media(max-width:640px){
-  .wrap{padding:8px 8px 40px}
-  .notes dt{float:none;min-width:0}.notes dd{margin-left:0;margin-bottom:8px}
-  th,td{padding:6px 7px;font-size:12px}
+:root{
+  /* A printed stat sheet under Tuesday light: paper, ink, the shield's navy, and the one
+     yellow television paints on the field. Nothing else gets a colour. */
+  --paper:#FFFFFF; --paper-2:#F7F9FC; --paper-3:#EDF1F7;
+  --ink:#12161C; --ink-2:#4E5866; --ink-3:#8A93A0;
+  --navy:#013369; --red:#D50A0A;
+  --first-down:#FFC40C; --first-down-ink:#5C4400; --first-down-soft:#FFF3CF;
+  --line:rgba(1,51,105,.12); --line-2:rgba(1,51,105,.22); --line-3:rgba(1,51,105,.40);
+  --wr:#1D5FA8; --te:#6B3FA0;
+  --head:'Archivo',system-ui,sans-serif; --body:'Archivo Narrow',system-ui,sans-serif;
+  --r-sm:5px; --r-md:8px; --r-lg:12px;
+  --ease:cubic-bezier(.23,1,.32,1);
 }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper-2);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.45;
+  -webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;text-wrap:pretty}
+.wrap{max-width:1280px;margin:0 auto;padding:20px 20px 56px}
+button{font-family:var(--body);cursor:pointer}
+a{color:var(--navy)}
+
+/* masthead — the sheet's letterhead */
+.mast{border-bottom:3px solid var(--navy);padding-bottom:10px;margin-bottom:0}
+.mast h1{font-family:var(--head);font-weight:800;font-size:28px;letter-spacing:-.015em;
+  color:var(--navy);margin:0;line-height:1.1}
+.mast h1 em{font-style:normal;color:var(--red)}
+.mast .stamp{font-size:12px;color:var(--ink-3);margin-top:4px;font-variant-numeric:tabular-nums}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:18px;overflow-x:auto}
+.tabs button,.tabs a{background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-1px;
+  color:var(--ink-3);font-family:var(--head);font-weight:600;font-size:13px;padding:9px 13px;
+  white-space:nowrap;text-decoration:none;transition:color .12s var(--ease)}
+.tabs button:hover,.tabs a:hover{color:var(--ink-2)}
+.tabs .on{color:var(--navy);border-bottom-color:var(--red)}
+
+/* the one sentence that says what to look at */
+.lede{font-size:14.5px;color:var(--ink-2);margin:0 0 18px;max-width:66ch}
+.lede b{color:var(--ink);font-weight:600}
+.lede .fd{background:var(--first-down-soft);box-shadow:inset 0 -2px 0 var(--first-down);
+  color:var(--ink);font-weight:600;padding:0 3px}
+
+/* controls: one rail, quiet until used */
+.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.ctl{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
+.seg{display:inline-flex;flex-wrap:wrap;gap:1px;background:var(--paper-3);border-radius:var(--r-md);padding:2px}
+.seg button{background:transparent;border:none;border-radius:var(--r-sm);padding:6px 11px;white-space:nowrap;
+  font-family:var(--head);font-weight:600;font-size:12px;color:var(--ink-2);
+  transition:background .12s var(--ease),color .12s var(--ease)}
+.seg button:hover{color:var(--ink)}
+.seg button:active{transform:scale(.97)}
+.seg button[data-on="1"]{background:var(--paper);color:var(--navy);box-shadow:0 0 0 1px var(--line)}
+.field{position:relative;flex:1 1 200px;min-width:170px}
+.field input{width:100%;background:var(--paper);border:1px solid var(--line-2);border-radius:var(--r-md);
+  color:var(--ink);font-family:var(--body);font-size:14px;padding:8px 10px 8px 30px}
+.field input::placeholder{color:var(--ink-3)}
+.field input:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(1,51,105,.12)}
+.field svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--ink-3)}
+.check{display:inline-flex;align-items:center;gap:7px;color:var(--ink-2);font-size:13px;
+  user-select:none;cursor:pointer;padding:6px 2px;min-height:40px}
+.check input{accent-color:var(--navy);width:15px;height:15px}
+.cap{font-family:var(--head);font-size:10px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3)}
+
+/* the sheet */
+.sheet{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-lg);overflow:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{padding:8px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
+tbody tr:last-child td{border-bottom:none}
+th{position:sticky;top:0;z-index:2;background:var(--paper);font-family:var(--head);font-size:10px;
+  font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);
+  border-bottom:1px solid var(--line-2);cursor:pointer;user-select:none}
+th:hover{color:var(--ink-2)}
+th.on{color:var(--navy)}
+th.on::after{content:"";display:inline-block;width:0;height:0;margin-left:5px;vertical-align:middle;
+  border-left:3.5px solid transparent;border-right:3.5px solid transparent}
+th.on.up::after{border-bottom:4px solid var(--navy)}
+th.on.down::after{border-top:4px solid var(--navy)}
+th.who,td.who{text-align:left;position:sticky;left:0;background:var(--paper);z-index:1}
+th.who{z-index:3}
+tbody tr:hover td{background:var(--paper-2)}
+tr.thin td{color:var(--ink-3)}
+tr.thin .nm{font-weight:500;color:var(--ink-2)}
+.nm{font-family:var(--head);font-weight:600;font-size:13.5px;color:var(--ink)}
+.tm{font-size:11.5px;color:var(--ink-3);margin-left:5px;letter-spacing:.02em}
+.pos{display:inline-block;width:23px;font-family:var(--head);font-size:10px;font-weight:700;
+  letter-spacing:.04em;margin-right:7px}
+.pos.WR{color:var(--wr)} .pos.TE{color:var(--te)}
+td.wk{color:var(--ink-2);font-size:13px}
+td.wk.zero{color:var(--ink-3)}
+
+/* the focal column: the number, its bar, and the line it has to cross */
+th.lead,td.lead{border-left:1px solid var(--line-2);padding-left:12px}
+td.lead{width:190px}
+.lead-in{display:flex;align-items:center;gap:10px;justify-content:flex-end}
+.val{font-family:var(--head);font-weight:700;font-size:16px;color:var(--ink);min-width:54px;text-align:right}
+tr.thin .val{font-weight:600;color:var(--ink-3)}
+.track{position:relative;flex:1;height:9px;background:var(--paper-3);border-radius:2px;overflow:hidden}
+.track i{position:absolute;left:0;top:0;bottom:0;background:var(--line-3);border-radius:2px;
+  transition:width .2s var(--ease)}
+.track i.over{background:var(--navy)}
+tr.thin .track i{background:var(--line-2)}
+.track b{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--first-down);border-radius:1px}
+.fdline{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-2);margin:8px 2px 0}
+.fdline s{display:inline-block;width:14px;height:3px;background:var(--first-down);text-decoration:none;border-radius:1px}
+.note{font-size:11.5px;color:var(--ink-3)}
+.rank{font-size:11.5px;color:var(--ink-3);margin-left:4px}
+
+.state{padding:44px 20px;text-align:center;color:var(--ink-3);font-size:14px}
+.state b{display:block;font-family:var(--head);font-weight:600;font-size:15px;color:var(--ink-2);margin-bottom:5px}
+
+/* the key, kept out of the way until wanted */
+details.key{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+details.key summary{font-family:var(--head);font-size:11px;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink-3);cursor:pointer;list-style:none;padding:4px 0}
+details.key summary::-webkit-details-marker{display:none}
+details.key summary:hover{color:var(--ink-2)}
+details.key summary::before{content:"+ ";font-weight:700}
+details.key[open] summary::before{content:"– "}
+.key dl{display:grid;grid-template-columns:max-content 1fr;gap:7px 20px;margin:10px 0 0;
+  font-size:13px;color:var(--ink-2);max-width:88ch}
+.key dt{font-family:var(--head);font-weight:600;color:var(--navy);white-space:nowrap}
+.key dd{margin:0}
+.key p{font-size:13px;color:var(--ink-2);max-width:88ch;margin:12px 0 0}
+
+@media(max-width:640px){
+  .wrap{padding:14px 12px 40px}
+  .mast h1{font-size:22px}
+  .lede{font-size:14px}
+  th,td{padding:7px 8px;font-size:12.5px}
+  td.lead{width:auto}
+  .val{font-size:15px}
+  .key dl{grid-template-columns:1fr;gap:2px}
+  .key dd{margin-bottom:9px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style></head><body>
 <div class="wrap">
-  <div class="masthead">
-    <h1>Mega Bowl 2026</h1>
-    <span class="sub" id="stamp">loading…</span>
-  </div>
+  <header class="mast">
+    <h1>Mega&nbsp;Bowl <em>Targets</em></h1>
+    <div class="stamp" id="stamp">Loading the sheet…</div>
+  </header>
   <nav class="tabs">
     <button class="tab on" data-tab="targets">Targets</button>
-    <a href="index.html">Draft War Room</a>
+    <a href="index.html">Draft war room</a>
   </nav>
 
   <section id="tab-targets">
-    <p class="lede">Who is actually earning the ball. <b>1st downs per route</b> is the one to read
-      first — 12%+ is the league-winner line for a WR. Tight ends read lower than receivers on every
-      per-route number, so judge a TE against other TEs.</p>
+    <p class="lede">Target share tells you how big his slice is. These tell you how good it is —
+      how often the ball comes when he runs a route, and how often that <b>moves the chains</b>.
+      <span class="fd">12% of routes</span> is the line a WR has to cross.</p>
 
     <div class="controls">
-      <input class="search" id="q" type="search" placeholder="Search a player…" autocomplete="off">
-      <span class="lbl">Pos</span>
-      <span class="grp pos" id="pos"></span>
-      <span class="lbl">Show</span>
-      <span class="grp" id="metric"></span>
-      <span class="lbl">Window</span>
-      <span class="grp" id="win"></span>
-      <label class="tgl"><input type="checkbox" id="minonly"> Qualified only</label>
+      <div class="field">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+             stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+        <input id="q" type="search" placeholder="Search a player" autocomplete="off" aria-label="Search a player">
+      </div>
+      <span class="ctl"><span class="cap">Pos</span><span class="seg" id="pos"></span></span>
+      <span class="ctl"><span class="cap">Show</span><span class="seg" id="metric"></span></span>
+      <span class="ctl"><span class="cap">Last</span><span class="seg" id="win"></span></span>
+      <label class="check"><input type="checkbox" id="minonly"> Enough routes to judge</label>
     </div>
 
-    <div class="board"><table id="grid"><thead></thead><tbody></tbody></table></div>
-    <div class="empty" id="empty" hidden>Nobody matches those filters.</div>
+    <div class="sheet"><table id="grid"><thead></thead><tbody></tbody></table>
+      <div class="state" id="state"><b>Loading</b>Reading this season's routes…</div>
+    </div>
+    <div class="fdline" id="fdline" hidden><s></s> First-down line — 12% of routes, the WR mark</div>
 
-    <div class="notes">
-      <h3>How to read it</h3>
+    <details class="key">
+      <summary>What these columns mean</summary>
       <dl>
-        <dt>1st downs/route</dt><dd>Receiving first downs ÷ routes run. The single best read on a
-          receiver: it rewards the catches that keep drives alive and ignores the ones that don't.
+        <dt>1D/route</dt><dd>Receiving first downs ÷ routes run. The best single read on a receiver:
+          it counts the catches that keep drives alive and ignores the ones that don't.
           <b>12%+ is the league-winner line for a WR.</b></dd>
-        <dt>Targets/route</dt><dd>How often he is thrown to when he actually runs a route. Around
-          20%+ is a featured receiver. This is what separates a real role from empty snaps —
-          target share can't, because it counts the snaps he sat out.</dd>
-        <dt>Routes (est.)</dt><dd>Pass routes run, <b>estimated</b>. See below.</dd>
-        <dt>Window</dt><dd>The last N games he ran routes in — byes and inactives are skipped, not
-          counted as zeros. Rates sum the top and bottom across the window and then divide, so one
+        <dt>Tgt/route</dt><dd>How often he's thrown to when he actually runs a route. Around 20%+ is a
+          featured receiver. Target share can't tell you this — it counts the snaps he sat out.</dd>
+        <dt>Routes</dt><dd>Pass routes run, estimated. See the note below.</dd>
+        <dt>Last 1 / 3 / 5</dt><dd>His last N games with routes — byes and inactives are skipped, not
+          counted as zeros. Rates add up the window's first downs and routes and then divide, so one
           quiet game can't swing them the way an average of weekly rates would.</dd>
-        <dt>Greyed rows</dt><dd>Under the route minimum for the window, so the rates are noise. They
-          get no flag and sit out the percentile. "Qualified only" hides them.</dd>
-        <dt>%ile</dt><dd>Where his rolling number ranks among qualified players at his own position.</dd>
+        <dt>Greyed rows</dt><dd>Too few routes in the window for the rate to mean anything. No line,
+          no percentile. Untick "enough routes to judge" to see them.</dd>
+        <dt>%ile</dt><dd>Where he ranks among players at his own position who clear that bar.</dd>
       </dl>
-      <h3>About the route estimate</h3>
       <p id="caveat"></p>
-      <p>Built from nflverse weekly player stats, snap counts and play-by-play. Rebuilt every
-        Tuesday, so stat corrections get picked up. <span id="sources"></span></p>
-    </div>
+      <p>Built from nflverse weekly stats, snap counts and play-by-play, rebuilt every Tuesday so stat
+        corrections land. <span id="sources"></span></p>
+    </details>
   </section>
 </div>
 
 <script>
 "use strict";
-const KEY = "megabowltargets2026v1";
-const FILE = "data/targets_2026.json";
+const KEY="megabowltargets2026v1", FILE="data/targets_2026.json";
 
-const METRICS = {
-  fd_rr: {label:"1D/RR", full:"1st downs per route", rate:true, num:"fd", den:"routes", fmt:pct, est:true},
-  tprr:  {label:"TPRR",  full:"Targets per route",   rate:true, num:"tgt", den:"routes", fmt:pct, est:true},
-  tgt:   {label:"Tgt",   full:"Targets",             rate:false, num:"tgt", fmt:one},
-  fd:    {label:"1D",    full:"1st downs",           rate:false, num:"fd",  fmt:one},
-  routes:{label:"Routes",full:"Routes run",          rate:false, num:"routes", fmt:one, est:true},
+const METRICS={
+  fd_rr:{label:"1D/route", full:"First downs per route", rate:true, num:"fd", den:"routes", fmt:pct, line:true},
+  tprr:{label:"Tgt/route", full:"Targets per route", rate:true, num:"tgt", den:"routes", fmt:pct},
+  tgt:{label:"Targets", full:"Targets", rate:false, num:"tgt", fmt:one},
+  fd:{label:"1st downs", full:"Receiving first downs", rate:false, num:"fd", fmt:one},
+  routes:{label:"Routes", full:"Routes run", rate:false, num:"routes", fmt:one},
 };
-const WINDOWS = [[1,"1"],[3,"3"],[5,"5"],[0,"Season"]];
-const POSES = [["WR","WR"],["TE","TE"],["","Both"]];
+const WINDOWS=[[1,"1"],[3,"3"],[5,"5"],[0,"All"]];
+const POSES=[["WR","WR"],["TE","TE"],["","Both"]];
 
 function pct(v){ return v==null||!isFinite(v) ? "—" : (v*100).toFixed(1)+"%"; }
 function one(v){ return v==null||!isFinite(v) ? "—" : (Math.abs(v)>=100 ? v.toFixed(0) : v.toFixed(1)); }
+function esc(s){ return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 
 let DATA=null, ROWS=[], WEEKS=[];
-const S = Object.assign(
-  {pos:"WR", metric:"fd_rr", win:3, minOnly:true, q:"", sort:"roll", dir:-1},
-  (()=>{ try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; } })()
-);
+const narrowQ=window.matchMedia("(max-width:640px)");
+const narrow=()=>narrowQ.matches;
+const S=Object.assign({pos:"WR",metric:"fd_rr",win:3,minOnly:true,q:"",sort:"roll",dir:-1},
+  (()=>{ try{ return JSON.parse(localStorage.getItem(KEY))||{}; }catch(e){ return {}; } })());
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
 
-// ---- window maths: sum the top, sum the bottom, then divide. Never average weekly rates.
-function roll(player){
-  const played = WEEKS.filter(w => { const d=player.weeks[w]; return d && d.routes > 0; });
-  const use = S.win ? played.slice(-S.win) : played;
-  const s = {tgt:0, fd:0, rec:0, routes:0};
-  for (const w of use){ const d=player.weeks[w]; s.tgt+=d.tgt; s.fd+=d.fd; s.rec+=d.rec; s.routes+=d.routes; }
-  const m = METRICS[S.metric];
-  const games = use.length;
+// Window maths: add up the numerator, add up the denominator, then divide. Never average
+// weekly rates — one quiet game would swing them.
+function roll(p){
+  const played=WEEKS.filter(w=>{ const d=p.weeks[w]; return d && d.routes>0; });
+  const use=S.win ? played.slice(-S.win) : played;
+  const s={tgt:0,fd:0,rec:0,routes:0};
+  for(const w of use){ const d=p.weeks[w]; s.tgt+=d.tgt; s.fd+=d.fd; s.rec+=d.rec; s.routes+=d.routes; }
+  const m=METRICS[S.metric], games=use.length;
   // Same rule the dashboard uses (mega.routes.route_bar), carried in the file: the published
   // minimum is written for a three-week window, so shorter windows ask per game instead.
-  const bar = Math.min(DATA.meta.min_routes, (DATA.meta.per_game_bar || 20) * games);
-  return {games, sums:s, qualified: games>0 && s.routes>=bar, bar,
-          value: games===0 ? null : (m.rate ? (s[m.den] ? s[m.num]/s[m.den] : null) : s[m.num]/games)};
+  const bar=Math.min(DATA.meta.min_routes,(DATA.meta.per_game_bar||20)*games);
+  return {games, sums:s, bar, qualified: games>0 && s.routes>=bar,
+    value: games===0 ? null : (m.rate ? (s[m.den]? s[m.num]/s[m.den] : null) : s[m.num]/games)};
 }
-function cell(player, w){
-  const d = player.weeks[w];
-  if (!d) return null;                       // bye, or not yet played
-  const m = METRICS[S.metric];
-  if (!m.rate) return d[m.num];
-  return d[m.den] ? d[m.num]/d[m.den] : null;
+function cell(p,w){
+  const d=p.weeks[w]; if(!d) return null;
+  const m=METRICS[S.metric];
+  return m.rate ? (d[m.den] ? d[m.num]/d[m.den] : null) : d[m.num];
 }
 
 function build(){
-  const q = S.q.trim().toLowerCase();
-  ROWS = DATA.players
-    .filter(p => (!S.pos || p.pos===S.pos) && (!q || p.name.toLowerCase().includes(q)))
-    .map(p => Object.assign({p}, roll(p)))
-    .filter(r => r.games > 0)
-    .filter(r => !S.minOnly || r.qualified);
-
-  // Percentile inside the qualified players at the same position, after filtering.
-  for (const pos of ["WR","TE"]){
-    const pool = ROWS.filter(r => r.p.pos===pos && r.qualified && r.value!=null)
-                     .sort((a,b)=>a.value-b.value);
-    pool.forEach((r,i)=>{ r.pctile = pool.length>1 ? i/(pool.length-1) : 1; r.rank=pool.length-i; r.pool=pool.length; });
+  const q=S.q.trim().toLowerCase();
+  ROWS=DATA.players
+    .filter(p=>(!S.pos||p.pos===S.pos)&&(!q||p.name.toLowerCase().includes(q)))
+    .map(p=>Object.assign({p},roll(p)))
+    .filter(r=>r.games>0)
+    .filter(r=>!S.minOnly||r.qualified);
+  for(const pos of ["WR","TE"]){
+    const pool=ROWS.filter(r=>r.p.pos===pos&&r.qualified&&r.value!=null).sort((a,b)=>a.value-b.value);
+    pool.forEach((r,i)=>{ r.pctile=pool.length>1 ? i/(pool.length-1) : 1; r.rank=pool.length-i; r.pool=pool.length; });
   }
-  const dir = S.dir;
+  const dir=S.dir;
   ROWS.sort((a,b)=>{
+    if(S.sort==="name") return a.p.name.localeCompare(b.p.name)*-dir;
     let x,y;
-    if (S.sort==="name"){ return a.p.name.localeCompare(b.p.name) * -dir; }
-    else if (S.sort==="games"){ x=a.games; y=b.games; }
-    else if (S.sort==="roll"){ x=a.value; y=b.value; }
+    if(S.sort==="games"){ x=a.games; y=b.games; }
+    else if(S.sort==="roll"){ x=a.value; y=b.value; }
     else { x=cell(a.p,S.sort); y=cell(b.p,S.sort); }
-    if (x==null) return 1; if (y==null) return -1;
+    if(x==null) return 1; if(y==null) return -1;
     return (x-y)*dir || a.p.name.localeCompare(b.p.name);
   });
 }
 
 function render(){
   build();
-  const m = METRICS[S.metric], tb=document.querySelector("#grid tbody"), th=document.querySelector("#grid thead");
-  const winLabel = S.win ? "L"+S.win : "Season";
-  th.innerHTML = "<tr>"
-    + `<th class="who ${S.sort==="name"?"on":""}" data-sort="name">Player</th>`
-    + WEEKS.map(w=>`<th class="n ${S.sort===w?"on":""}" data-sort="${w}">W${w}</th>`).join("")
-    // A count over a window has to be per game, or a player who missed a week looks quiet.
-    + `<th class="roll ${S.sort==="roll"?"on":""}" data-sort="roll" title="${m.full} over the window`
-    + `${m.rate ? " — window totals divided, not an average of the weekly rates" : ", per game"}">`
-    + `${winLabel} ${m.label}${m.rate?"":"/g"}</th>`
-    + `<th class="${S.sort==="games"?"on":""}" data-sort="games" title="Games with routes in the window">G</th>`
-    + `<th title="Percentile among qualified players at his position">%ile</th>`
-    + `<th></th></tr>`;
+  const m=METRICS[S.metric], head=document.querySelector("#grid thead"), body=document.querySelector("#grid tbody");
+  const winLabel=S.win?("L"+S.win):"Season";
+  const arrow=k=>S.sort===k ? (S.dir===1?"on up":"on down") : "";
+  // The bar is read against the first-down line, so the scale has to keep the line on screen.
+  const threshold=m.line ? DATA.meta.wr_fd_flag : null;
+  let scaleMax=Math.max(...ROWS.filter(r=>r.qualified&&r.value!=null).map(r=>r.value), 0);
+  if(threshold) scaleMax=Math.max(scaleMax, threshold*1.25);
+  if(!(scaleMax>0)) scaleMax=1;
 
-  tb.innerHTML = ROWS.map(r=>{
+  const lead=`<th class="lead ${arrow("roll")}" data-sort="roll" title="${m.full} over the window`
+    +`${m.rate?" — the window's totals divided, not an average of the weekly rates":", per game"}">`
+    +`${winLabel} ${m.label}${m.rate?"":"/g"}</th>`;
+  const weekHeads=narrow() ? "" : WEEKS.map(w=>`<th class="${arrow(w)}" data-sort="${w}" title="Week ${w}">W${w}</th>`).join("");
+  head.innerHTML="<tr>"
+    +`<th class="who ${arrow("name")}" data-sort="name" title="Sort by name">Player</th>`
+    +(narrow() ? lead + weekHeads : weekHeads + lead)
+    +`<th class="${arrow("games")}" data-sort="games" title="Games with routes in the window">G</th>`
+    +`<th title="Percentile among players at his position with enough routes">%ile</th>`
+    +`<th></th></tr>`;
+  body.innerHTML=ROWS.map(r=>{
     const p=r.p;
-    const cells = WEEKS.map(w=>{
+    const cells=narrow() ? "" : WEEKS.map(w=>{
       const v=cell(p,w), d=p.weeks[w];
-      const t = d ? `${d.tgt} tgt · ${d.fd} 1D · ${d.rec} rec · ${one(d.routes)} routes` : "did not play";
-      return `<td class="n" title="Week ${w}: ${t}">${v==null?"—":m.fmt(v)}</td>`;
+      const t=d ? `Week ${w}: ${d.tgt} targets · ${d.fd} first downs · ${d.rec} catches · ${one(d.routes)} routes`
+                : `Week ${w}: did not play`;
+      return `<td class="wk ${d&&!d.routes?"zero":""}" title="${t}">${v==null?"—":m.fmt(v)}</td>`;
     }).join("");
-    const flag = !r.qualified ? `<span class="thinnote">under ${r.bar} routes</span>`
-      : (p.pos==="WR" && S.metric==="fd_rr" && r.value>=DATA.meta.wr_fd_flag ? `<span class="flag">LEAGUE-WINNER</span>` : "");
-    const pc = r.pctile==null ? "—" : Math.round(r.pctile*100)+(r.rank?`<span class="thinnote"> #${r.rank}/${r.pool}</span>`:"");
+    const w=Math.max(0,Math.min(100,(r.value/scaleMax)*100));
+    const over=threshold!=null && r.qualified && r.value>=threshold;
+    const track=`<span class="track"><i class="${over?"over":""}" style="width:${w.toFixed(1)}%"></i>`
+      +(threshold!=null?`<b style="left:${((threshold/scaleMax)*100).toFixed(1)}%"></b>`:"")+`</span>`;
+    const mark=r.qualified ? "" : `<span class="note">under ${r.bar} routes</span>`;
+    const pc=r.pctile==null ? `<span class="note">—</span>`
+      : `${Math.round(r.pctile*100)}<span class="rank">#${r.rank}/${r.pool}</span>`;
+    const leadCell=`<td class="lead"><span class="lead-in">${track}<span class="val">${m.fmt(r.value)}</span></span></td>`;
     return `<tr class="${r.qualified?"":"thin"}">`
-      + `<td class="who"><span class="pill ${p.pos}">${p.pos}</span><span class="nm">${p.name}</span> <span class="tm">${p.team}</span></td>`
-      + cells
-      + `<td class="roll">${m.fmt(r.value)}</td><td class="n">${r.games}</td><td class="n">${pc}</td><td>${flag}</td></tr>`;
+      +`<td class="who"><span class="pos ${p.pos}">${p.pos}</span><span class="nm">${esc(p.name)}</span>`
+      +`<span class="tm">${esc(p.team)}</span></td>`
+      +(narrow() ? leadCell + cells : cells + leadCell)
+      +`<td>${r.games}</td><td>${pc}</td><td>${mark}</td></tr>`;
   }).join("");
-  document.getElementById("empty").hidden = ROWS.length>0;
+
+  const st=document.getElementById("state");
+  st.hidden=ROWS.length>0;
+  if(!ROWS.length) st.innerHTML="<b>Nobody here</b>Try a wider window, the other position, or untick “enough routes to judge”.";
+  document.getElementById("fdline").hidden=!(threshold!=null && ROWS.length);
   save();
 }
 
-function group(id, items, cur, set){
+function seg(id,items,cur,set){
   const el=document.getElementById(id);
-  el.innerHTML = items.map(([v,l])=>`<button class="${v}" data-v="${v}" data-on="${v===cur?1:0}">${l}</button>`).join("");
-  el.onclick = e => { const b=e.target.closest("button"); if(!b) return; set(b.dataset.v); draw(); };
+  el.innerHTML=items.map(([v,l])=>`<button data-v="${v}" data-on="${v===cur?1:0}">${l}</button>`).join("");
+  el.onclick=e=>{ const b=e.target.closest("button"); if(!b) return; set(b.dataset.v); draw(); };
 }
 function draw(){
-  group("pos", POSES, S.pos, v=>{S.pos=v;});
-  group("metric", Object.entries(METRICS).map(([k,v])=>[k,v.label]), S.metric, v=>{S.metric=v;});
-  group("win", WINDOWS.map(([v,l])=>[String(v),l]), String(S.win), v=>{S.win=+v;});
+  seg("pos",POSES,S.pos,v=>{S.pos=v;});
+  seg("metric",Object.entries(METRICS).map(([k,v])=>[k,v.label]),S.metric,v=>{S.metric=v;});
+  seg("win",WINDOWS.map(([v,l])=>[String(v),l]),String(S.win),v=>{S.win=+v;});
   render();
 }
 
-document.getElementById("grid").addEventListener("click", e=>{
+document.getElementById("grid").addEventListener("click",e=>{
   const th=e.target.closest("th[data-sort]"); if(!th) return;
   const k=th.dataset.sort;
-  if (S.sort===k) S.dir=-S.dir; else { S.sort=k; S.dir=(k==="name")?1:-1; }
+  if(S.sort===k) S.dir=-S.dir; else { S.sort=k; S.dir=(k==="name")?1:-1; }
   render();
 });
 const qi=document.getElementById("q"); qi.value=S.q;
-qi.addEventListener("input", ()=>{ S.q=qi.value; render(); });
+qi.addEventListener("input",()=>{ S.q=qi.value; render(); });
+narrowQ.addEventListener("change",()=>{ if(DATA) render(); });
 const mo=document.getElementById("minonly"); mo.checked=S.minOnly;
-mo.addEventListener("change", ()=>{ S.minOnly=mo.checked; render(); });
+mo.addEventListener("change",()=>{ S.minOnly=mo.checked; render(); });
 
-fetch(FILE, {cache:"no-cache"}).then(r=>{
+fetch(FILE,{cache:"no-cache"}).then(r=>{
   if(!r.ok) throw new Error(r.status+" "+r.statusText);
   return r.json();
 }).then(d=>{
   DATA=d;
-  WEEKS = Object.keys(d.team_dropbacks).reduce((a,t)=>a.concat(Object.keys(d.team_dropbacks[t])),[])
-            .map(Number).filter((v,i,s)=>s.indexOf(v)===i).sort((a,b)=>a-b).map(String);
-  const when = new Date(d.meta.generated_at);
-  document.getElementById("stamp").textContent =
-    `Targets · ${d.meta.season} through week ${d.meta.last_week} · built ${when.toLocaleString([], {dateStyle:"medium", timeStyle:"short"})}`;
-  document.getElementById("caveat").textContent = d.meta.routes_caveat;
-  document.getElementById("sources").innerHTML = Object.entries(d.meta.sources)
-    .map(([k,u])=>`<a href="${u}">${k}</a>`).join(" · ");
+  WEEKS=[...new Set(Object.values(d.team_dropbacks).flatMap(t=>Object.keys(t)).map(Number))]
+    .sort((a,b)=>a-b).map(String);
+  const when=new Date(d.meta.generated_at);
+  document.getElementById("stamp").textContent=
+    `${d.meta.season} season · through week ${d.meta.last_week} · built ${when.toLocaleString([],{dateStyle:"medium",timeStyle:"short"})}`;
+  document.getElementById("caveat").textContent=d.meta.routes_caveat;
+  document.getElementById("sources").innerHTML=Object.entries(d.meta.sources)
+    .map(([k,u])=>`<a href="${u}">${k.replace(/_/g," ")}</a>`).join(" · ");
   draw();
 }).catch(e=>{
-  document.getElementById("stamp").textContent = "data unavailable";
-  document.getElementById("empty").hidden=false;
-  document.getElementById("empty").textContent =
-    `Couldn't load ${FILE} (${e.message}). It's rebuilt every Tuesday by scripts/targets_json.py in the ff-dashboard repo.`;
+  document.getElementById("stamp").textContent="Data unavailable";
+  document.getElementById("state").innerHTML=
+    `<b>Couldn't load the sheet</b>${esc(FILE)} — ${esc(e.message)}. It's rebuilt every Tuesday by scripts/targets_json.py.`;
 });
 </script>
 </body></html>
